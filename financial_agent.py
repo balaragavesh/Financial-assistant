@@ -4,6 +4,7 @@ from openai import OpenAI
 import requests
 import json
 from config import GROQ_API_KEY, GROQ_API_BASE, GROQ_MODEL
+from memory import get_memory, add_to_memory
 
 # --- 🔑 GROQ CLIENT SETUP ---
 client = OpenAI(
@@ -94,9 +95,10 @@ tools = [
 
 # --- 🧠 AGENT FUNCTION ---
 def run_agent(user_input):
+    add_to_memory("user", user_input)  # Save input
     response = client.chat.completions.create(
         model=GROQ_MODEL,
-        messages=[{"role": "user", "content": user_input}],
+        messages=get_memory() + [{"role": "user", "content": user_input}],
         tools=tools,
         tool_choice="auto"
     )
@@ -114,7 +116,8 @@ def run_agent(user_input):
             return explain_financial_term(args["term"])
         elif fn_name == "summarize_news":
             return summarize_news(args["news"])
-
+        
+    add_to_memory("assistant", message.content)
     return message.content or "I couldn't generate a response."
 
 # --- 🖥️ CLI TEST RUNNER ---
